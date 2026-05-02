@@ -1,0 +1,45 @@
+{
+  "name": "universal-file-parser",
+  "displayName": "Universal File Parser",
+  "description": "High-performance file parsing and visualization for CSV, JSON, XML, and more.",
+  "version": "0.1.0",
+  "publisher": "YourName",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:csv",
+    "onLanguage:json",
+    "onLanguage:xml"
+  ],
+  "main": "./extension/main.py",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.helloWorld",
+        "title": "UFP: Say Hello"
+      },
+      {
+        "command": "extension.parseFile",
+        "title": "UFP: Parse Current File"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "extension.parseFile",
+        "key": "ctrl+shift+u",
+        "mac": "cmd+shift+u",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "flake8 extension/ tests/",
+    "test": "pytest tests/",
+    "format": "black extension/ tests/",
+    "type-check": "mypy extension/"
+  }
+}
