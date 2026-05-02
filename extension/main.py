@@ -1,4 +1,5 @@
 from .detector import FileDetector
+from .parsers.factory import ParserFactory
 import logging
 
 logging.basicConfig(
@@ -45,33 +46,31 @@ class ExtensionManager:
         return message
 
     def parse_file(self, file_path=None):
-        """Main parsing entry point (Phase 2 Scaffold)."""
         if not file_path:
-            logger.error("No file path provided for parsing.")
-            return {"status": "error", "message": "No file path provided"}
-
-        logger.info(f"Parsing requested for: {file_path}")
-        # Logic for Phase 2 goes here
-        return {"status": "success", "file": file_path}
-    
-    def parse_file(self, file_path=None):
-        """Main parsing entry point with Phase 2 Detection."""
-        if not file_path:
-            logger.error("No file path provided.")
             return {"status": "error", "message": "No file path provided"}
         
+        # Phase 2: Detection
         file_type = FileDetector.detect_type(file_path)
-        logger.info(f"Detected File Type: {file_type} for {file_path}")
+        logger.info(f"Detected: {file_type}")
 
-        if file_type == "UNKNOWN":
-            return {"status": "unsupported", "message": f"Unsupported format for {file_path}"}
+        # Phase 3: Parsing
+        parser = ParserFactory.get_parser(file_type)
+        if not parser:
+            return {"status": "unsupported", "message": f"No parser for {file_type}"}
 
-        # Logic for Phase 3 (Actual Parsers) will go here
-        return {
-            "status": "success", 
-            "detected_type": file_type, 
-            "path": file_path
-        }
+        try:
+            df = parser.parse(file_path)
+            # Return metadata and a preview of the data
+            return {
+                "status": "success",
+                "detected_type": file_type,
+                "rows": len(df),
+                "columns": list(df.columns),
+                "preview": df.head(5).to_dict(orient='records')
+            }
+        except Exception as e:
+            logger.error(f"Parsing failed: {str(e)}")
+            return {"status": "error", "message": str(e)}
 
 
 def activate():
