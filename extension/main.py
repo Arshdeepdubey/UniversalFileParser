@@ -1,3 +1,4 @@
+from .detector import FileDetector
 import logging
 
 logging.basicConfig(
@@ -52,6 +53,25 @@ class ExtensionManager:
         logger.info(f"Parsing requested for: {file_path}")
         # Logic for Phase 2 goes here
         return {"status": "success", "file": file_path}
+    
+    def parse_file(self, file_path=None):
+        """Main parsing entry point with Phase 2 Detection."""
+        if not file_path:
+            logger.error("No file path provided.")
+            return {"status": "error", "message": "No file path provided"}
+        
+        file_type = FileDetector.detect_type(file_path)
+        logger.info(f"Detected File Type: {file_type} for {file_path}")
+
+        if file_type == "UNKNOWN":
+            return {"status": "unsupported", "message": f"Unsupported format for {file_path}"}
+
+        # Logic for Phase 3 (Actual Parsers) will go here
+        return {
+            "status": "success", 
+            "detected_type": file_type, 
+            "path": file_path
+        }
 
 
 def activate():
