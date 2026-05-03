@@ -13,16 +13,17 @@ def test_json_parsing(manager):
     assert result["status"] == "success"
     assert result["detected_type"] == "JSON"
     assert len(result["preview"]) > 0
+    # Use the cleaned/normalized column name
     assert "name" in result["columns"]
 
-@pytest.mark.skipif(
-    not os.path.exists("tests/assets/test.avro"),
-    reason="test.avro not available (avro-python3 not installed)"
-)
 def test_avro_parsing(manager):
     result = manager.parse_file("tests/assets/test.avro")
     assert result["status"] == "success"
     assert result["detected_type"] == "AVRO"
     assert result["rows"] == 2
-    # Check if nested fields were handled
-    assert "details" in result["columns"]
+    
+    # FIX: Phase 4 flattening transformed 'details' into these columns
+    assert "details_dept" in result["columns"]
+    assert "details_site" in result["columns"]
+    # Ensure the original nested 'details' was dropped
+    assert "details" not in result["columns"]
