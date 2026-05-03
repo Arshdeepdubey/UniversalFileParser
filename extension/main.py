@@ -1,6 +1,7 @@
 from .detector import FileDetector
 from .parsers.factory import ParserFactory
 from .cleaner import DataCleaner  # NEW
+from .html_generator import HTMLGenerator  # NEW
 import logging
 
 logging.basicConfig(
@@ -57,21 +58,33 @@ class ExtensionManager:
             return {"status": "unsupported", "message": f"No parser for {file_type}"}
 
         try:
-            # 1. Parse
             raw_df = parser.parse(file_path)
-            
-            # 2. Clean (Phase 4)
             clean_df = DataCleaner.clean(raw_df)
             
+            stats = {
+                "type": file_type,
+                "rows": len(clean_df),
+                "size": f"{len(clean_df) * len(clean_df.columns)} cells"
+            }
+            
+            html_content = HTMLGenerator.generate_view(
+                clean_df.head(10).to_dict(orient='records'), 
+                list(clean_df.columns),
+                stats
+            )
+            
+            # Restore the keys expected by the older tests
             return {
                 "status": "success",
-                "detected_type": file_type,
-                "rows": len(clean_df),
-                "columns": list(clean_df.columns),
-                "preview": clean_df.head(5).to_dict(orient='records')
+                "detected_type": file_type,         # Backwards compatibility
+                "rows": len(clean_df),               # Backwards compatibility
+                "columns": list(clean_df.columns),   # Backwards compatibility
+                "preview": clean_df.head(10).to_dict(orient='records'), # Backwards compatibility
+                "html": html_content,                # Phase 5 Feature
+                "metadata": stats                    # Phase 5 Feature
             }
         except Exception as e:
-            logger.error(f"Processing failed: {str(e)}")
+            logger.error(f"UI Generation failed: {str(e)}")
             return {"status": "error", "message": str(e)}
 
 

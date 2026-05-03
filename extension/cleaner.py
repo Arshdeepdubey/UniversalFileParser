@@ -32,7 +32,8 @@ class DataCleaner:
     @staticmethod
     def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
         """Standardizes missing values to None for clean JSON output."""
-        return df.where(pd.notnull(df), None)
+        # Cast to object to prevent Pandas from forcing None back to NaN in numeric columns
+        return df.astype(object).where(pd.notnull(df), None)
 
     @staticmethod
     def flatten_nested_data(df: pd.DataFrame) -> pd.DataFrame:
