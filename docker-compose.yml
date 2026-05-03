@@ -1,22 +1,12 @@
-version: '3.8'
-
 services:
-  parser:
-    build:
-      context: .
-      target: runtime
-    ports:
-      - "8000:8000"
-    environment:
-      - ENV=production
-
-  parser-dev:
-    build:
-      context: .
-      target: dev
+  ufp-parser:
+    build: .
     volumes:
       - .:/app
-    ports:
-      - "8001:8001"
     environment:
-      - ENV=development
+      - PYTHONUNBUFFERED=1
+    # Use ; so tail runs regardless of test success/failure
+    command: >
+      sh -c "python scripts/generate_test_data.py; 
+             pytest tests/test_phase4_integration.py -v; 
+             tail -f /dev/null"
