@@ -1,5 +1,6 @@
 from .detector import FileDetector
 from .parsers.factory import ParserFactory
+from .cleaner import DataCleaner  # NEW
 import logging
 
 logging.basicConfig(
@@ -49,27 +50,28 @@ class ExtensionManager:
         if not file_path:
             return {"status": "error", "message": "No file path provided"}
         
-        # Phase 2: Detection
         file_type = FileDetector.detect_type(file_path)
-        logger.info(f"Detected: {file_type}")
-
-        # Phase 3: Parsing
         parser = ParserFactory.get_parser(file_type)
+        
         if not parser:
             return {"status": "unsupported", "message": f"No parser for {file_type}"}
 
         try:
-            df = parser.parse(file_path)
-            # Return metadata and a preview of the data
+            # 1. Parse
+            raw_df = parser.parse(file_path)
+            
+            # 2. Clean (Phase 4)
+            clean_df = DataCleaner.clean(raw_df)
+            
             return {
                 "status": "success",
                 "detected_type": file_type,
-                "rows": len(df),
-                "columns": list(df.columns),
-                "preview": df.head(5).to_dict(orient='records')
+                "rows": len(clean_df),
+                "columns": list(clean_df.columns),
+                "preview": clean_df.head(5).to_dict(orient='records')
             }
         except Exception as e:
-            logger.error(f"Parsing failed: {str(e)}")
+            logger.error(f"Processing failed: {str(e)}")
             return {"status": "error", "message": str(e)}
 
 

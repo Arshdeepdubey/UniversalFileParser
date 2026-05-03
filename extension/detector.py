@@ -2,45 +2,43 @@ import os
 
 
 class FileDetector:
-    # Magic numbers for common file types
+    # Core magic numbers
     SIGNATURES = {
-        b'\x89PNG\r\n\x1a\n': 'PNG',
-        b'PK\x03\x04': 'ZIP/DOCX/XLSX',  # Office/ZIP files
-        b'%PDF': 'PDF',
-        b'\xef\xbb\xbf': 'UTF-8 BOM',
         b'Obj\x01': 'AVRO',
+        b'PAR1': 'PARQUET',
+        b'\x89PNG\r\n\x1a\n': 'PNG',
+        b'PK\x03\x04': 'XLSX',  # ZIP-based (Excel, Docx)
+        b'%PDF': 'PDF',
     }
 
     @staticmethod
     def detect_type(file_path: str) -> str:
         """Detects file type using magic numbers with extension fallback."""
-        # Check if file exists first
-        if not os.path.exists(file_path):
-            return "UNKNOWN"
-        
-        # 1. Try Signature Detection if file exists
-        try:
-            with open(file_path, 'rb') as f:
-                header = f.read(16)
-                for sig, file_type in FileDetector.SIGNATURES.items():
-                    if header.startswith(sig):
-                        # Special handling for ZIP-based formats
-                        if (file_type == 'ZIP/DOCX/XLSX' and
-                                file_path.endswith('.xlsx')):
-                            return 'XLSX'
-                        return file_type
-        except Exception:
-            pass
+        _, ext = os.path.splitext(file_path)
+        ext = ext.lower()
 
-        # 2. Fallback to Extension
-        ext = os.path.splitext(file_path)[1].lower()
         extension_map = {
             '.csv': 'CSV',
             '.json': 'JSON',
-            '.xml': 'XML',
             '.parquet': 'PARQUET',
             '.avro': 'AVRO',
+            '.xlsx': 'XLSX',
             '.txt': 'TEXT'
         }
 
+        # 1. Try Signature Detection if file exists
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'rb') as f:
+                    header = f.read(16)
+                    for sig, ftype in FileDetector.SIGNATURES.items():
+                        if header.startswith(sig):
+                            # Special check: if it's a ZIP signature but .xlsx ext, it's XLSX
+                            if ftype == 'XLSX' and not ext == '.xlsx':
+                                continue
+                            return ftype
+            except Exception:
+                pass
+
+        # 2. Fallback to Extension
         return extension_map.get(ext, "UNKNOWN")
