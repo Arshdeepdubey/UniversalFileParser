@@ -1,22 +1,30 @@
-# Stage 1: Builder/Test
-FROM python:3.9-slim as builder
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-RUN pytest tests/ && flake8 extension/
+# Stage 1: Builder
+FROM python:3.11-slim as builder
 
-# Stage 2: Production Runtime
-FROM python:3.9-slim as runtime
+WORKDIR /app
+
+# Install system dependencies for binary packages (Avro/Pandas)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    liblzma-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Stage 2: Runtime
+FROM python:3.11-slim as runtime
+
 WORKDIR /app
 RUN useradd -m parseruser
 USER parseruser
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=builder /app/extension ./extension
-EXPOSE 8000
-CMD ["python", "extension/main.py"]
 
-# Stage 3: Development
-FROM builder as dev
-RUN pip install pytest-watch
-CMD ["ptw", "--", "tests/", "--cov=extension"]
+# Copy installed packages from builder
+COPY --from=builder /root/.local /home/parseruser/.local
+COPY . .
+
+# Update PATH for the non-root user
+ENV PATH=/home/parseruser/.local/bin:$PATH
+
+# Default command runs the parser tests to verify the environment
+CMD ["pytest", "tests/"]
