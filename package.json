@@ -3,7 +3,7 @@
   "displayName": "Universal File Parser",
   "description": "High-performance file parsing and visualization for CSV, JSON, XML, and more.",
   "version": "0.1.0",
-  "publisher": "YourName",
+  "publisher": "ArshdeepDubey",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -11,11 +11,12 @@
     "Other"
   ],
   "activationEvents": [
+    "onCommand:extension.parseFile",
     "onLanguage:csv",
     "onLanguage:json",
     "onLanguage:xml"
   ],
-  "main": "./extension/main.py",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
@@ -24,7 +25,7 @@
       },
       {
         "command": "extension.parseFile",
-        "title": "UFP: Parse Current File"
+        "title": "UFP: Parse and Preview File"
       }
     ],
     "keybindings": [
@@ -34,12 +35,30 @@
         "mac": "cmd+shift+u",
         "when": "editorTextFocus"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "extension.parseFile",
+          "group": "navigation",
+          "when": "resourceExtname =~ /(.csv|.json|.avro|.parquet|.xlsx)/"
+        }
+      ]
+    }
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
     "lint": "flake8 extension/ tests/",
     "test": "pytest tests/",
     "format": "black extension/ tests/",
     "type-check": "mypy extension/"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.130",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.1.3"
   }
 }
