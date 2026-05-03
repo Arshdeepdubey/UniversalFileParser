@@ -2,7 +2,7 @@ import pandas as pd
 from .base import BaseParser
 import logging
 
-logger = logging.getLogger("ParserFactory")
+logger = logging.getLogger("AvroParser")
 
 # Try to import avro, but make it optional
 try:
@@ -31,22 +31,13 @@ class XLSXParser(BaseParser):
 
 class AvroParser(BaseParser):
     def parse(self, file_path: str) -> pd.DataFrame:
-        if not AVRO_AVAILABLE:
-            raise RuntimeError("avro-python3 is not available. Please install it with: pip install avro-python3")
-        
         try:
-            # Read Avro file using avro-python3
-            records = []
-            with avro.datafile.DataFileReader(open(file_path, 'rb'), avro.io.DatumReader()) as reader:
-                for record in reader:
-                    records.append(record)
-            
-            if not records:
-                logger.warning(f"Avro file {file_path} is empty.")
-                return pd.DataFrame()
-            
-            df = pd.DataFrame(records)
-            return df
+            # We use pandavro because it handles the Avro schema automatically
+            import pandavro as pdv
+            return pdv.read_avro(file_path)
+        except ImportError:
+            logger.error("Pandavro/Fastavro not found.")
+            raise ImportError("Please run: pip install pandavro fastavro")
         except Exception as e:
-            logger.error(f"Failed to parse Avro: {str(e)}")
-            raise ValueError(f"Invalid Avro format or schema mismatch: {str(e)}")
+            logger.error(f"Avro parsing failed: {e}")
+            raise e
